@@ -1,0 +1,18 @@
+:root{--accent:#111;--muted:#666}
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#111}
+.app main{padding:20px;min-height:70vh}
+.container{max-width:980px;margin:0 auto}
+.navbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid #eee}
+.nav-links a{margin-left:12px;text-decoration:none;color:var(--accent)}
+.hero{display:flex;gap:20px;align-items:center}
+.hero .left{flex:1}
+.hero .right{flex:1}
+.card{border:1px solid #eee;padding:12px;border-radius:6px;background:#fff}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.project-image{width:100%;height:140px;object-fit:cover;border-radius:4px}
+.progress{background:#eee;border-radius:8px;height:12px;overflow:hidden}
+.progress > div{height:100%;background:#111}
+.form-row{display:flex;gap:8px;flex-wrap:wrap}
+input,select,button,textarea{padding:8px;border:1px solid #ccc;border-radius:4px}
+footer{border-top:1px solid #eee;padding:12px;text-align:center;color:var(--muted)}
