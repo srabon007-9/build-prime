@@ -1,0 +1,56 @@
+============================================================
+           AI USAGE DECLARATION
+============================================================
+
+Name: Srabon Ahmed
+Student ID: 23301107
+Assignment: Project Milestone 2
+Date: August 10, 2026
+
+------------------------------------------------------------
+1. AI TOOLS USED (check all that apply)
+------------------------------------------------------------
+ GitHub Copilot
+ Google Gemini
+
+
+------------------------------------------------------------
+2. PURPOSE OF AI USE (check all that apply)
+------------------------------------------------------------
+Learning/understanding concepts
+Debugging my code
+Generating boilerplate of project
+
+------------------------------------------------------------
+3. DESCRIPTION OF AI USE
+------------------------------------------------------------
+Briefly describe what you used AI for and how:
+
+I used AI primarily as a coding assistant to clarify database concepts and debug errors during development. 
+GitHub Copilot provided boilerplate auto-completions. I also used Gemini to solve some issues, optimize Node.js backend routes, and get suggestions on dashboard UI layout structure. 
+All generated logic was reviewed, tested, and integrated manually.
+
+------------------------------------------------------------
+4. AI-ASSISTED SECTIONS
+------------------------------------------------------------
+List specific files/sections where AI helped significantly:
+
+File: server/config/db.js    Section: Database connection setup & pool handling
+File: server/routes/api.js   Section: Express route handlers & SQL query logic
+File: client/src/styles.css  Section: Layout & dashboard responsiveness fixes
+
+------------------------------------------------------------
+5. DECLARATION
+------------------------------------------------------------
+I declare that:
+- This disclosure is complete and accurate
+- I understand all code in my submission
+- I can explain and modify my work if asked
+- I take full responsibility for my submission
+
+Signature: Srabon Ahmed
+Date: August 10, 2026
+
+============================================================
+Save as: docs/AI_Declaration.txt
+============================================================
