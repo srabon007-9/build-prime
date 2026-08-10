@@ -22,26 +22,54 @@ export default function Projects(){
   })
 
   return (
-    <div className="container">
-      <h2>Projects</h2>
-      <div style={{display:'flex',gap:8,marginBottom:12}}>
-        <input placeholder="Search name, id, location" value={q} onChange={e=>setQ(e.target.value)} />
-        <select value={type} onChange={e=>setType(e.target.value)}>
-          <option>All</option>
-          <option>Residential</option>
-          <option>Commercial</option>
-          <option>Industrial</option>
-          <option>Infrastructure</option>
-        </select>
-        <select value={status} onChange={e=>setStatus(e.target.value)}>
-          <option>All</option>
-          <option>Ongoing</option>
-          <option>Completed</option>
-          <option>Upcoming</option>
-        </select>
+    <div>
+      <div style={{ backgroundColor: 'var(--light-gray)', padding: '60px 0', borderBottom: '1px solid var(--border)' }}>
+        <div className="container">
+          <span className="label">BuildPrime BD / Operational Assets</span>
+          <h1 style={{ marginBottom: '16px' }}>INFRASTRUCTURE<br/>PROGRESS TRACKER</h1>
+          <p className="text-muted" style={{ maxWidth: '600px', fontSize: '1.1rem' }}>
+            Monitor active construction projects and engineering progress across Bangladesh.
+          </p>
+        </div>
       </div>
-      <div className="projects-grid">
-        {filtered.map(p=> <ProjectCard key={p._id} project={p} />)}
+
+      <div className="container section">
+        <div className="card" style={{ marginBottom: '40px', display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end', backgroundColor: 'var(--light-gray)', border: 'none' }}>
+          <div className="form-group" style={{ flex: '1 1 250px', marginBottom: 0 }}>
+            <label>Search Projects</label>
+            <input placeholder="Search name, ID, location..." value={q} onChange={e=>setQ(e.target.value)} style={{ backgroundColor: 'var(--white)' }} />
+          </div>
+          <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+            <label>Project Type</label>
+            <select value={type} onChange={e=>setType(e.target.value)} style={{ backgroundColor: 'var(--white)' }}>
+              <option>All</option>
+              <option>Residential</option>
+              <option>Commercial</option>
+              <option>Industrial</option>
+              <option>Infrastructure</option>
+            </select>
+          </div>
+          <div className="form-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+            <label>Status</label>
+            <select value={status} onChange={e=>setStatus(e.target.value)} style={{ backgroundColor: 'var(--white)' }}>
+              <option>All</option>
+              <option>Ongoing</option>
+              <option>Completed</option>
+              <option>Upcoming</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+          {filtered.length > 0 ? (
+            filtered.map(p=> <ProjectCard key={p._id} project={p} />)
+          ) : (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 20px', color: 'var(--medium-gray)' }}>
+              <h3>No projects found</h3>
+              <p>Try adjusting your search or filters.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

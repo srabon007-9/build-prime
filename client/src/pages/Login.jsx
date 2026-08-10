@@ -1,5 +1,5 @@
 import React, {useState} from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 export default function Login(){
   const [email,setEmail]=useState('')
@@ -23,14 +23,32 @@ export default function Login(){
   }
 
   return (
-    <div className="container" style={{maxWidth:420}}>
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <div><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" /></div>
-        <div style={{marginTop:8}}><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" /></div>
-        <div style={{marginTop:8}}><button type="submit">Login</button></div>
-        {error && <div style={{color:'red',marginTop:8}}>{error}</div>}
-      </form>
+    <div className="container section" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '40px', backgroundColor: 'var(--white)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <span className="label">BuildPrime</span>
+          <h2 style={{ fontSize: '1.8rem', letterSpacing: '-0.5px' }}>MEMBER ACCESS</h2>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Email Address</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@company.com" required />
+          </div>
+          <div className="form-group" style={{ marginBottom: '24px' }}>
+            <label>Password</label>
+            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" required />
+          </div>
+          
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '24px' }}>LOG IN →</button>
+          
+          {error && <div style={{ color: '#D32F2F', backgroundColor: '#FFEBEE', padding: '12px', borderRadius: '4px', fontSize: '0.9rem', marginBottom: '24px', textAlign: 'center' }}>{error}</div>}
+          
+          <div style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--medium-gray)' }}>
+            Don't have an account? <Link to="/register" style={{ color: 'var(--black)', fontWeight: 600 }}>Create account</Link>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

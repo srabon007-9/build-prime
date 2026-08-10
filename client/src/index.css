@@ -1,18 +1,199 @@
-:root{--accent:#111;--muted:#666}
-*{box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;margin:0;color:#111}
-.app main{padding:20px;min-height:70vh}
-.container{max-width:980px;margin:0 auto}
-.navbar{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid #eee}
-.nav-links a{margin-left:12px;text-decoration:none;color:var(--accent)}
-.hero{display:flex;gap:20px;align-items:center}
-.hero .left{flex:1}
-.hero .right{flex:1}
-.card{border:1px solid #eee;padding:12px;border-radius:6px;background:#fff}
-.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-.project-image{width:100%;height:140px;object-fit:cover;border-radius:4px}
-.progress{background:#eee;border-radius:8px;height:12px;overflow:hidden}
-.progress > div{height:100%;background:#111}
-.form-row{display:flex;gap:8px;flex-wrap:wrap}
-input,select,button,textarea{padding:8px;border:1px solid #ccc;border-radius:4px}
-footer{border-top:1px solid #eee;padding:12px;text-align:center;color:var(--muted)}
+:root {
+  --black: #1D1D1D;
+  --white: #FFFFFF;
+  --light-gray: #F4F4F4;
+  --medium-gray: #777777;
+  --border: #D8D8D8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Inter, Arial, Helvetica, sans-serif;
+  color: var(--black);
+  background-color: var(--white);
+  line-height: 1.6;
+}
+
+/* Layout */
+.app main {
+  min-height: 70vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.section {
+  padding: 80px 0;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 50px 0;
+  }
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+h1 { font-size: 3rem; }
+h2 { font-size: 2.2rem; }
+h3 { font-size: 1.5rem; }
+
+.label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: var(--medium-gray);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.text-muted {
+  color: var(--medium-gray);
+}
+
+/* UI Elements */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 24px;
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 2px;
+  margin-bottom: 16px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--black);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background: #000000;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--black);
+  border: 1px solid var(--black);
+}
+
+.btn-secondary:hover {
+  background: var(--light-gray);
+  transform: translateY(-1px);
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 1rem;
+  background: var(--light-gray);
+  transition: border-color 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--black);
+  background: var(--white);
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  width: 100%;
+  background: var(--light-gray);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--black);
+  transition: width 0.5s ease;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: var(--light-gray);
+  color: var(--black);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
