@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { getUser, isAdmin } from '../api'
+import Logo from './Logo'
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -25,10 +26,7 @@ export default function Navbar() {
     <header className="site-header">
       <div className="nav-wrap">
         {/* Brand Logo */}
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true"></div>
-          <Link to="/" onClick={close}>BuildPrime</Link>
-        </div>
+        <Logo onClick={close} />
 
         {/* Desktop Navigation Links */}
         <nav className="nav-links" aria-label="Main navigation">

@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import Logo from './Logo'
 
 export default function Footer() {
   return (
@@ -8,9 +9,8 @@ export default function Footer() {
         <div className="footer-grid">
           {/* Brand Info */}
           <div className="footer-brand-col">
-            <div className="footer-brand">
-              <div className="brand-mark small"></div>
-              <span>BuildPrime Construction</span>
+            <div className="footer-brand" style={{ marginBottom: '12px' }}>
+              <Logo size={28} />
             </div>
             <p className="footer-desc">
               Premier construction planning, project development, cost estimation, and transparent engineering monitoring across Bangladesh.
