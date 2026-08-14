@@ -64,6 +64,21 @@ export default function StartSite() {
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
+  function handleFileUpload(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      toast('File size must be under 5MB', 'error')
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setForm(prev => ({ ...prev, image: reader.result }))
+      toast('Photo uploaded successfully!', 'success')
+    }
+    reader.readAsDataURL(file)
+  }
+
   function startEdit(project) {
     setEditingId(project._id)
     setForm({
@@ -169,8 +184,14 @@ export default function StartSite() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="image">Photo URL</label>
-                  <input id="image" name="image" value={form.image} onChange={update} placeholder="https://..." />
+                  <label htmlFor="image">Site Photo (Upload or Paste URL)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input id="image" name="image" value={form.image} onChange={update} placeholder="https://... or click Upload" />
+                    <label htmlFor="photo-file" className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.82rem', whiteSpace: 'nowrap', cursor: 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center' }}>
+                      📁 Upload
+                    </label>
+                    <input id="photo-file" type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                  </div>
                 </div>
               </div>
 
