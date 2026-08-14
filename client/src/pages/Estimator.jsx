@@ -1,10 +1,19 @@
+// ====================================================================
+// 🧮 CONSTRUCTION COST CALCULATOR (Estimator.jsx)
+// ====================================================================
+// - LOCATIONS: List of Bangladesh locations for drop-down (lines 14)
+// - FLOORS   : List of floor counts (lines 15)
+// ====================================================================
+
 import React, { useState } from 'react'
 import { API_URL } from '../api'
 import { useToast } from '../components/Toast'
 
+// --- 1. CONFIGURATION DATA ---
 const LOCATIONS = ['Gulshan', 'Banani', 'Dhanmondi', 'Uttara', 'Bashundhara', 'Purbachal', 'Mirpur', 'Khilgaon', 'Chattogram', 'Sylhet', 'Rajshahi', 'Khulna']
 const FLOORS = ['1', '2', '3', '4', '5+']
 
+// --- 2. CALCULATOR COMPONENT ---
 export default function Estimator() {
   const [buildingType, setBuildingType] = useState('Residential')
   const [area, setArea] = useState(2000)
@@ -23,6 +32,7 @@ export default function Estimator() {
     return true
   }
 
+  // API Call to generate & optionally save estimate
   async function handleCalc(save = false) {
     if (!validateArea(area)) return
 

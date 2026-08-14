@@ -1,6 +1,16 @@
+// ====================================================================
+// 🏠 HOME PAGE (Home.jsx)
+// ====================================================================
+// EDIT PAGE CONTENT HERE:
+// - SERVICES     : Edit or add home page service cards (lines 14-21)
+// - TESTIMONIALS : Edit or add client reviews (lines 23-27)
+// - FAQ          : Edit or add frequently asked questions (lines 29-33)
+// ====================================================================
+
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+// --- 1. CONTENT DATA ARRAYS ---
 const SERVICES = [
   { icon: '🏠', title: 'Residential Construction', text: 'Modern apartment complexes, duplex family homes, and planned residential developments built to international standards.' },
   { icon: '🏢', title: 'Commercial Development', text: 'State-of-the-art office towers, retail showrooms, shopping plazas, and mixed-use commercial properties.' },
@@ -26,6 +36,7 @@ function Stars() {
   return <div className="testimonial-stars" aria-label="5 stars">★★★★★</div>
 }
 
+// --- 2. HOME PAGE COMPONENT ---
 export default function Home() {
   return (
     <div>

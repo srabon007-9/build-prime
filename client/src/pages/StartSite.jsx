@@ -1,3 +1,10 @@
+// ====================================================================
+// 👑 ADMIN SITE CREATION & MANAGEMENT PAGE (StartSite.jsx)
+// ====================================================================
+// Allowed for ADMIN users only.
+// Features: Create new project, Edit project, Delete project, Update status %
+// ====================================================================
+
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { API_URL, apiFetch, isAdmin } from '../api'

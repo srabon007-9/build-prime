@@ -1,18 +1,29 @@
-import React, {useEffect, useState} from 'react'
+// ====================================================================
+// 🏗️ PROJECT DETAILS PAGE (ProjectDetails.jsx)
+// ====================================================================
+// Displays a single project's technical specifications, progress bar,
+// interactive unit selector, cost breakdown, stages, and transactions.
+// ====================================================================
+
+import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { API_URL, getUser, apiFetch } from '../api'
+import { getUser, apiFetch } from '../api'
 import UnitSelector from '../components/UnitSelector'
 
-export default function ProjectDetails(){
+export default function ProjectDetails() {
   const { id } = useParams()
-  const [project,setProject]=useState(null)
-  const [payment,setPayment]=useState({ investorName: '', stageName: '', amount: '', note: '' })
-  const [message,setMessage]=useState('')
-  const [error,setError]=useState('')
+
+  // --- 1. STATE ---
+  const [project, setProject] = useState(null)
+  const [payment, setPayment] = useState({ investorName: '', stageName: '', amount: '', note: '' })
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
   const user = getUser()
 
-  useEffect(()=>{fetchProject()},[id])
-  async function fetchProject(){
+  // --- 2. FETCH SITE DATA ---
+  useEffect(() => { fetchProject() }, [id])
+
+  async function fetchProject() {
     try {
       const { ok, data } = await apiFetch(`/projects/${id}`)
       if (!ok) throw new Error(data.message || 'Project not found')
@@ -22,11 +33,13 @@ export default function ProjectDetails(){
     }
   }
 
-  function updatePayment(event){
-    setPayment({...payment, [event.target.name]: event.target.value})
+  // --- 3. ADMIN PAYMENT HANDLER ---
+  function updatePayment(event) {
+    const { name, value } = event.target
+    setPayment(prev => ({ ...prev, [name]: value }))
   }
 
-  async function submitPayment(event){
+  async function submitPayment(event) {
     event.preventDefault()
     setMessage('Saving payment...')
 
@@ -45,15 +58,19 @@ export default function ProjectDetails(){
     setMessage('Payment saved ✓')
   }
 
-  if(error) return <div className="container section"><div className="card empty-state">{error}</div></div>
-  if(!project) return <div className="container section" style={{ textAlign: 'center', color: 'var(--medium-gray)' }}>Loading project data...</div>
+  // --- 4. CONDITIONAL STATES ---
+  if (error) return <div className="container section"><div className="card empty-state">{error}</div></div>
+  if (!project) return <div className="container section" style={{ textAlign: 'center', color: 'var(--medium-gray)' }}>Loading project data...</div>
+
   const price = project.estimatedPrice || project.budgetBDT || 0
   const hasCostBreakdown = project.landPrice || project.materialCost || project.equipmentCost || project.laborCost || project.permitCost
   const stages = project.stages || []
   const transactions = project.transactions || []
 
+  // --- 5. RENDER ---
   return (
     <div>
+      {/* Project Banner Image */}
       {project.image && (
         <div style={{ width: '100%', height: '420px', overflow: 'hidden' }}>
           <img
@@ -65,8 +82,11 @@ export default function ProjectDetails(){
       )}
       
       <div className="container section">
-        <Link to="/projects" style={{ display: 'inline-block', marginBottom: '24px', color: 'var(--medium-gray)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>← Back to Projects</Link>
+        <Link to="/projects" style={{ display: 'inline-block', marginBottom: '24px', color: 'var(--medium-gray)', textDecoration: 'none', fontWeight: 600, fontSize: '0.9rem' }}>
+          ← Back to Projects
+        </Link>
         
+        {/* Main Grid: Overview & Specifications */}
         <div className="grid-2" style={{ alignItems: 'start' }}>
           <div>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
@@ -88,6 +108,7 @@ export default function ProjectDetails(){
             </div>
           </div>
           
+          {/* Technical Specifications Panel */}
           <div className="card" style={{ backgroundColor: 'var(--light-gray)', border: 'none', padding: '32px' }}>
             <span className="label" style={{ marginBottom: '24px' }}>TECHNICAL SPECIFICATIONS</span>
             
@@ -123,6 +144,7 @@ export default function ProjectDetails(){
         {/* Interactive Floor Plans & Unit Availability Selector */}
         <UnitSelector project={project} />
 
+        {/* Cost Breakdown */}
         {hasCostBreakdown && (
           <div className="card cost-breakdown-card">
             <span className="label">Business Cost Breakdown</span>
@@ -138,6 +160,7 @@ export default function ProjectDetails(){
           </div>
         )}
 
+        {/* Stage Progress Breakdown */}
         {stages.length > 0 && (
           <div className="card cost-breakdown-card">
             <span className="label">Project Stage Monitor</span>
@@ -164,6 +187,7 @@ export default function ProjectDetails(){
           </div>
         )}
 
+        {/* Transaction History & Admin Record Payment */}
         <div className="card cost-breakdown-card">
           <span className="label">Transaction Monitor</span>
           <h2>All Project Transactions</h2>

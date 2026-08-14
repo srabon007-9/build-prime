@@ -1,5 +1,13 @@
-// In production (Vercel), API is served from the same domain via /api
-// In local development, the server runs on port 5500
+// ====================================================================
+// 🌐 API & AUTHENTICATION UTILITIES
+// ====================================================================
+// - API_URL   : Backend server endpoint URL
+// - getToken  : Retrieves current saved login JWT token from localStorage
+// - getUser   : Retrieves current logged-in user profile from localStorage
+// - isAdmin   : Returns true if logged-in user role is 'admin'
+// - apiFetch  : Shared helper function for API requests with auto auth header
+// ====================================================================
+
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500/api'
 
 export function getToken() {

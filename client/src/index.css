@@ -1,6 +1,14 @@
-/* =========================================================
-   BUILDPRIME — DESIGN SYSTEM
-   ========================================================= */
+/* ====================================================================
+   🎨 BUILDPRIME — DESIGN SYSTEM & MAIN COLORS
+   ====================================================================
+   To change website colors, edit these variables:
+   - --green       : Primary brand color (buttons, active links, accents)
+   - --green-dark  : Darker green for button hover states
+   - --black       : Primary text color & dark section backgrounds
+   - --gold        : Warm construction accent color (badges, highlights)
+   - --light-gray  : Light section background color
+   - --white       : Pure white for card backgrounds
+   ==================================================================== */
 
 :root {
   --green: #1b4332;

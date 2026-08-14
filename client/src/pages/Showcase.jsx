@@ -1,3 +1,9 @@
+// ====================================================================
+// 🧱 MATERIALS & EQUIPMENT PAGE (Showcase.jsx)
+// ====================================================================
+// To add or edit construction materials or machines, update the ITEMS array below.
+// ====================================================================
+
 import React, { useState } from 'react'
 
 const ITEMS = [

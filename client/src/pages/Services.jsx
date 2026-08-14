@@ -1,3 +1,9 @@
+// ====================================================================
+// 🛠️ SERVICES PAGE (Services.jsx)
+// ====================================================================
+// To add or edit services, modify the SERVICES array below.
+// ====================================================================
+
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -13,7 +19,7 @@ const SERVICES = [
 export default function Services() {
   return (
     <div>
-      {/* Page Hero */}
+      {/* Page Hero Header */}
       <section className="page-hero">
         <div className="container">
           <span className="label">Our Services</span>
