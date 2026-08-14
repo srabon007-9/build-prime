@@ -7,7 +7,21 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean)
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. Postman, mobile apps)
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+    callback(new Error(`CORS: origin ${origin} not allowed`))
+  },
+  credentials: true
+}))
 app.use(express.json());
 
 // Connect to Database
@@ -17,6 +31,7 @@ connectDB();
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/estimates', require('./routes/estimationRoutes'));
+app.use('/api/consultations', require('./routes/consultationRoutes'));
 
 // Root test route to easily check backend health on Vercel
 app.get('/api', (req, res) => {

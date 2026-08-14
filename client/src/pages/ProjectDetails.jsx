@@ -1,23 +1,67 @@
 import React, {useEffect, useState} from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { API_URL, getUser, apiFetch } from '../api'
+import UnitSelector from '../components/UnitSelector'
 
 export default function ProjectDetails(){
   const { id } = useParams()
   const [project,setProject]=useState(null)
+  const [payment,setPayment]=useState({ investorName: '', stageName: '', amount: '', note: '' })
+  const [message,setMessage]=useState('')
+  const [error,setError]=useState('')
+  const user = getUser()
 
   useEffect(()=>{fetchProject()},[id])
   async function fetchProject(){
-    const res = await fetch(`http://localhost:5500/api/projects/${id}`)
-    const data = await res.json()
-    setProject(data)
+    try {
+      const { ok, data } = await apiFetch(`/projects/${id}`)
+      if (!ok) throw new Error(data.message || 'Project not found')
+      setProject(data)
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
+  function updatePayment(event){
+    setPayment({...payment, [event.target.name]: event.target.value})
+  }
+
+  async function submitPayment(event){
+    event.preventDefault()
+    setMessage('Saving payment...')
+
+    const { ok, data } = await apiFetch(`/projects/${id}/transactions`, {
+      method: 'POST',
+      body: JSON.stringify(payment)
+    })
+
+    if (!ok) {
+      setMessage(data.message || 'Could not save payment')
+      return
+    }
+
+    setProject(data)
+    setPayment({ investorName: '', stageName: '', amount: '', note: '' })
+    setMessage('Payment saved ✓')
+  }
+
+  if(error) return <div className="container section"><div className="card empty-state">{error}</div></div>
   if(!project) return <div className="container section" style={{ textAlign: 'center', color: 'var(--medium-gray)' }}>Loading project data...</div>
+  const price = project.estimatedPrice || project.budgetBDT || 0
+  const hasCostBreakdown = project.landPrice || project.materialCost || project.equipmentCost || project.laborCost || project.permitCost
+  const stages = project.stages || []
+  const transactions = project.transactions || []
 
   return (
     <div>
       {project.image && (
-        <div style={{ width: '100%', height: '400px', backgroundImage: `url(${project.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+        <div style={{ width: '100%', height: '420px', overflow: 'hidden' }}>
+          <img
+            src={project.image}
+            alt={`${project.name} construction site`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+          />
+        </div>
       )}
       
       <div className="container section">
@@ -59,11 +103,97 @@ export default function ProjectDetails(){
               </div>
               
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
-                <div style={{ fontSize: '0.85rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Allocated Budget</div>
-                <div style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--black)' }}>BDT {project.budgetBDT.toLocaleString()}</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Estimated Price</div>
+                <div style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--black)' }}>BDT {price.toLocaleString()}</div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Interested Investors</div>
+                <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{project.investorCount || 0} people</div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Initial Land Payment / Person</div>
+                <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>BDT {(project.landPaymentPerInvestor || 0).toLocaleString()}</div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Interactive Floor Plans & Unit Availability Selector */}
+        <UnitSelector project={project} />
+
+        {hasCostBreakdown && (
+          <div className="card cost-breakdown-card">
+            <span className="label">Business Cost Breakdown</span>
+            <h2>How The Estimated Price Was Calculated</h2>
+            <div className="cost-list">
+              <div><span>Land Price</span><strong>BDT {(project.landPrice || 0).toLocaleString()}</strong></div>
+              <div><span>Material Cost</span><strong>BDT {(project.materialCost || 0).toLocaleString()}</strong></div>
+              <div><span>Equipment Cost</span><strong>BDT {(project.equipmentCost || 0).toLocaleString()}</strong></div>
+              <div><span>Labor Cost</span><strong>BDT {(project.laborCost || 0).toLocaleString()}</strong></div>
+              <div><span>Permit / Utility Cost</span><strong>BDT {(project.permitCost || 0).toLocaleString()}</strong></div>
+              <div><span>Contingency</span><strong>{project.contingencyPercent || 0}%</strong></div>
+            </div>
+          </div>
+        )}
+
+        {stages.length > 0 && (
+          <div className="card cost-breakdown-card">
+            <span className="label">Project Stage Monitor</span>
+            <h2>Money Collection By Construction Step</h2>
+            <div className="stage-list">
+              {stages.map(stage => {
+                const percent = stage.targetAmount ? Math.round((stage.collectedAmount / stage.targetAmount) * 100) : 0
+                return (
+                  <div className="stage-row" key={stage.name}>
+                    <div>
+                      <h3>{stage.name}</h3>
+                      <p>{stage.status}</p>
+                    </div>
+                    <div>
+                      <strong>BDT {(stage.collectedAmount || 0).toLocaleString()} / {(stage.targetAmount || 0).toLocaleString()}</strong>
+                      <div className="progress-bar-container">
+                        <div className="progress-bar-fill" style={{ width: `${percent}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="card cost-breakdown-card">
+          <span className="label">Transaction Monitor</span>
+          <h2>All Project Transactions</h2>
+          {user.role === 'admin' && (
+            <form className="payment-form" onSubmit={submitPayment}>
+              <input name="investorName" value={payment.investorName} onChange={updatePayment} placeholder="Investor name" required />
+              <select name="stageName" value={payment.stageName} onChange={updatePayment} required>
+                <option value="">Select stage</option>
+                {stages.map(stage => <option key={stage.name}>{stage.name}</option>)}
+              </select>
+              <input name="amount" type="number" value={payment.amount} onChange={updatePayment} placeholder="Amount" required />
+              <input name="note" value={payment.note} onChange={updatePayment} placeholder="Note" />
+              <button className="btn btn-primary">Record Payment</button>
+              {message && <p className="form-status">{message}</p>}
+            </form>
+          )}
+
+          {transactions.length > 0 ? (
+            <div className="transaction-list">
+              {transactions.map((item, index) => (
+                <div className="transaction-row" key={index}>
+                  <span style={{ fontWeight: 600 }}>{item.investorName}</span>
+                  <span style={{ color: 'var(--medium-gray)' }}>{item.stageName}</span>
+                  <strong style={{ color: 'var(--green)' }}>BDT {(item.amount || 0).toLocaleString()}</strong>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted">No payments recorded yet. Admin can add payment recording later.</p>
+          )}
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ exports.requiredAuth = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretkey');
     req.userId = decoded.userId;
+    req.userRole = decoded.role;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' });
@@ -22,8 +23,16 @@ exports.optionalAuth = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secretkey');
     req.userId = decoded.userId;
+    req.userRole = decoded.role;
   } catch (err) {
     // ignore
+  }
+  next();
+};
+
+exports.adminOnly = (req, res, next) => {
+  if (req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'Only admin can start a construction site' });
   }
   next();
 };

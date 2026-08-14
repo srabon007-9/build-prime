@@ -1,57 +1,66 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-export default function Footer(){
+export default function Footer() {
   return (
-    <footer style={{ backgroundColor: 'var(--light-gray)', padding: '60px 0 20px', marginTop: '40px' }}>
+    <footer className="site-footer">
       <div className="container">
-        <div className="grid-3" style={{ marginBottom: '40px', gap: '40px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-              <div style={{ width: '16px', height: '16px', backgroundColor: 'var(--black)', borderRadius: '2px' }}></div>
-              <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.5px' }}>BuildPrime Construction</span>
+        <div className="footer-grid">
+          {/* Brand Info */}
+          <div className="footer-brand-col">
+            <div className="footer-brand">
+              <div className="brand-mark small"></div>
+              <span>BuildPrime Construction</span>
             </div>
-            <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-              Structural engineering, construction management and technical solutions for Bangladesh's next generation of infrastructure.
+            <p className="footer-desc">
+              Premier construction planning, project development, cost estimation, and transparent engineering monitoring across Bangladesh.
             </p>
           </div>
-          
-          <div style={{ display: 'flex', gap: '40px' }}>
-            <div>
-              <span className="label">Quick Links</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem' }}>
-                <Link to="/" style={{ color: 'var(--black)', textDecoration: 'none' }}>Home</Link>
-                <Link to="/projects" style={{ color: 'var(--black)', textDecoration: 'none' }}>Projects</Link>
-                <Link to="/estimator" style={{ color: 'var(--black)', textDecoration: 'none' }}>Estimator</Link>
-                <Link to="/my-estimates" style={{ color: 'var(--black)', textDecoration: 'none' }}>My Estimates</Link>
-              </div>
-            </div>
-            <div>
-              <span className="label">Our Services</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', color: 'var(--black)' }}>
-                <span>Residential Building</span>
-                <span>Commercial Development</span>
-                <span>Industrial Construction</span>
-                <span>Project Consultation</span>
-              </div>
-            </div>
+
+          {/* Quick Links */}
+          <div>
+            <span className="footer-heading">Quick Links</span>
+            <ul className="footer-links">
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/services">Services</Link></li>
+              <li><Link to="/projects">Projects</Link></li>
+              <li><Link to="/cost-estimator">Cost Calculator</Link></li>
+              <li><Link to="/materials">Materials</Link></li>
+              <li><Link to="/portfolio">Portfolio</Link></li>
+            </ul>
           </div>
 
+          {/* Services */}
           <div>
-            <span className="label">Contact</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', color: 'var(--black)' }}>
-              <span>Dhaka, Bangladesh</span>
-              <span>+880 1XXX-XXXXXX</span>
-              <span>info@buildprime.com</span>
-            </div>
+            <span className="footer-heading">Services</span>
+            <ul className="footer-links text-only">
+              <li>Residential Construction</li>
+              <li>Commercial Projects</li>
+              <li>Land Development</li>
+              <li>Project Management</li>
+              <li>Cost Breakdown Planning</li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <span className="footer-heading">Contact Us</span>
+            <ul className="footer-links text-only">
+              <li>Dhaka, Bangladesh</li>
+              <li>+880 1682-399499</li>
+              <li>info@buildprime.com</li>
+              <li>Mon - Sat: 9:00 AM - 6:00 PM</li>
+            </ul>
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--medium-gray)' }}>
-          <span>© 2026 BuildPrime Construction — Demo project</span>
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <span>Privacy Policy</span>
-            <span>Terms of Service</span>
+        {/* Bottom Bar */}
+        <div className="footer-bottom">
+          <span>© 2026 BuildPrime Construction Ltd. All rights reserved.</span>
+          <div className="footer-legal">
+            <span style={{ cursor: 'pointer' }}>Privacy Policy</span>
+            <span>•</span>
+            <span style={{ cursor: 'pointer' }}>Terms of Service</span>
           </div>
         </div>
       </div>
