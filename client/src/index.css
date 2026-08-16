@@ -1305,7 +1305,6 @@ h3 { font-size: 1.35rem; }
 .nav-actions .btn-primary:hover {
   background: #54ca99;
   color: white;
-  transform: translateY(0px);
 } 
 
 
