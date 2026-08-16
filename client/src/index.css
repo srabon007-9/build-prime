@@ -1293,6 +1293,22 @@ h3 { font-size: 1.35rem; }
   box-shadow: 0 4px 14px rgba(27, 67, 50, 0.2);
 }
 
+.nav-actions .btn-primary {
+  background: var(--green);
+  color: var(--white);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.nav-actions .btn-primary:hover {
+  background: #54ca99;
+  color: white;
+  transform: translateY(0px);
+} 
+
+
 .btn-primary:hover:not(:disabled) {
   background: var(--green-dark);
   transform: translateY(-2px);
