@@ -35,7 +35,12 @@ export async function apiFetch(path, options = {}) {
   }
   try {
     const res = await fetch(`${API_URL}${path}`, { ...options, headers })
-    const data = await res.json()
+    let data = {}
+    try {
+      data = await res.json()
+    } catch (e) {
+      data = { message: `Server returned status ${res.status}` }
+    }
     return { ok: res.ok, status: res.status, data }
   } catch (err) {
     return { ok: false, status: 0, data: { message: 'Network error — check your connection' } }

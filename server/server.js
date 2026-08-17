@@ -24,8 +24,11 @@ app.use(cors({
 }))
 app.use(express.json());
 
-// Connect to Database
-connectDB();
+// Ensure Database Connection for Serverless Executions
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
