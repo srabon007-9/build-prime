@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getProjects,
   getProjectById,
+  getStatsOverview,
   createProject,
   updateProject,
   deleteProject,
@@ -11,6 +12,7 @@ const {
 const auth = require('../middleware/authMiddleware');
 
 router.get('/', getProjects);
+router.get('/stats/overview', auth.requiredAuth, auth.adminOnly, getStatsOverview);
 router.post('/', auth.requiredAuth, auth.adminOnly, createProject);
 router.put('/:id', auth.requiredAuth, auth.adminOnly, updateProject);
 router.delete('/:id', auth.requiredAuth, auth.adminOnly, deleteProject);

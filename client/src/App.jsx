@@ -12,6 +12,7 @@
 // - '/quote'          -> Consultation.jsx (Request quote form)
 // - '/start-site'     -> StartSite.jsx (Admin site creation)
 // - '/admin/quotes'   -> AdminQuotes.jsx (Admin quote leads)
+// - '/admin/dashboard'-> AdminDashboard.jsx (Admin analytics dashboard)
 // - '/login'          -> Login.jsx (User & admin login)
 // - '/register'       -> Register.jsx (User registration)
 // - '/my-estimates'   -> MyEstimates.jsx (Saved estimates)
@@ -39,6 +40,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import MyEstimates from './pages/MyEstimates'
 import AdminQuotes from './pages/AdminQuotes'
+import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -57,6 +59,7 @@ export default function App() {
           <Route path="/quote" element={<Consultation />} />
           <Route path="/start-site" element={<StartSite />} />
           <Route path="/admin/quotes" element={<AdminQuotes />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/my-estimates" element={<MyEstimates />} />

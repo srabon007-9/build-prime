@@ -1,4 +1,7 @@
 const Project = require('../models/Project');
+const User = require('../models/User');
+const Consultation = require('../models/Consultation');
+const Estimation = require('../models/Estimation');
 
 function createDefaultStages(costs) {
   return [
@@ -44,6 +47,79 @@ exports.getProjectById = async (req, res) => {
     const project = await Project.findById(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
     res.json(project);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.getStatsOverview = async (req, res) => {
+  try {
+    const [projects, statusCounts, userCount, leadCount, estimateCount] = await Promise.all([
+      Project.find().select('name status budgetBDT estimatedPrice totalCollected progressPercentage transactions createdAt').sort({ createdAt: -1 }),
+      Project.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]),
+      User.countDocuments({ role: 'user' }),
+      Consultation.countDocuments(),
+      Estimation.countDocuments()
+    ]);
+
+    const totals = projects.reduce((acc, project) => {
+      acc.totalBudget += project.budgetBDT || project.estimatedPrice || 0;
+      acc.totalCollected += project.totalCollected || 0;
+      acc.avgProgress += project.progressPercentage || 0;
+      return acc;
+    }, { totalBudget: 0, totalCollected: 0, avgProgress: 0 });
+
+    const perProject = projects.map(project => ({
+      _id: project._id,
+      name: project.name,
+      status: project.status,
+      budget: project.budgetBDT || project.estimatedPrice || 0,
+      collected: project.totalCollected || 0,
+      progressPercentage: project.progressPercentage || 0
+    }));
+
+    const recentTransactions = projects
+      .flatMap(project => (project.transactions || []).map(transaction => ({
+        projectName: project.name,
+        investorName: transaction.investorName,
+        stageName: transaction.stageName,
+        amount: transaction.amount,
+        date: transaction.date
+      })))
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 10);
+
+    const monthlyCollections = [];
+    const collectionByMonth = {};
+    projects.forEach(project => {
+      (project.transactions || []).forEach(transaction => {
+        const date = new Date(transaction.date);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        collectionByMonth[key] = (collectionByMonth[key] || 0) + (transaction.amount || 0);
+      });
+    });
+    Object.keys(collectionByMonth).sort().forEach(key => {
+      monthlyCollections.push({ month: key, amount: collectionByMonth[key] });
+    });
+
+    res.json({
+      totals: {
+        totalProjects: projects.length,
+        totalBudget: Math.round(totals.totalBudget),
+        totalCollected: Math.round(totals.totalCollected),
+        avgProgress: projects.length ? Math.round(totals.avgProgress / projects.length) : 0,
+        totalUsers: userCount,
+        totalLeads: leadCount,
+        totalEstimates: estimateCount
+      },
+      statusBreakdown: statusCounts.map(item => ({ status: item._id, count: item.count })),
+      perProject,
+      recentTransactions,
+      monthlyCollections
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });

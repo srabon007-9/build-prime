@@ -43,6 +43,7 @@ export default function Navbar() {
           {token ? (
             <>
               <NavLink to="/my-estimates" className={linkClass}>My Estimates</NavLink>
+              {admin && <NavLink to="/admin/dashboard" className={linkClass}>Dashboard</NavLink>}
               {admin && <NavLink to="/start-site" className={linkClass}>New Site</NavLink>}
               {admin && <NavLink to="/admin/quotes" className={linkClass}>Quotes</NavLink>}
               <button onClick={handleLogout} className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
@@ -83,6 +84,7 @@ export default function Navbar() {
         {token ? (
           <>
             <Link to="/my-estimates" onClick={close}>My Estimates</Link>
+            {admin && <Link to="/admin/dashboard" onClick={close}>Dashboard</Link>}
             {admin && <Link to="/start-site" onClick={close}>New Site</Link>}
             {admin && <Link to="/admin/quotes" onClick={close}>Quote Requests</Link>}
             <button onClick={handleLogout}>Logout</button>

@@ -7,6 +7,11 @@
 
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import {
+  PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, CartesianGrid
+} from 'recharts'
 import { getUser, apiFetch } from '../api'
 import UnitSelector from '../components/UnitSelector'
 
@@ -66,6 +71,34 @@ export default function ProjectDetails() {
   const hasCostBreakdown = project.landPrice || project.materialCost || project.equipmentCost || project.laborCost || project.permitCost
   const stages = project.stages || []
   const transactions = project.transactions || []
+
+  // Chart data: budget vs collected donut
+  const totalCollected = project.totalCollected || 0
+  const remainingBudget = Math.max(0, price - totalCollected)
+  const fundingData = [
+    { name: 'Collected', value: totalCollected },
+    { name: 'Remaining', value: remainingBudget }
+  ].filter(item => item.value > 0)
+  const collectionPercent = price ? Math.round((totalCollected / price) * 100) : 0
+
+  // Chart data: collected vs target per stage
+  const stageData = stages.map(stage => ({
+    name: stage.name,
+    collected: stage.collectedAmount || 0,
+    target: stage.targetAmount || 0
+  }))
+
+  // Chart data: cumulative collections over time
+  const cumulativeData = [...transactions]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .reduce((acc, item, index) => {
+      const previous = index > 0 ? acc[index - 1].total : 0
+      acc.push({
+        date: new Date(item.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        total: previous + (item.amount || 0)
+      })
+      return acc
+    }, [])
 
   // --- 5. RENDER ---
   return (
@@ -183,6 +216,85 @@ export default function ProjectDetails() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Stage Collection Chart */}
+        {stageData.length > 0 && (
+          <div className="card cost-breakdown-card">
+            <span className="label">Collection Visualisation</span>
+            <h2>Collected vs Target by Stage</h2>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={stageData} layout="vertical" margin={{ left: 40, right: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis type="number" tickFormatter={value => `${Math.round(value / 100000)}L`} tick={{ fontSize: 12, fill: 'var(--medium-gray)' }} />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12, fill: 'var(--black)' }} />
+                <Tooltip formatter={value => `BDT ${value.toLocaleString()}`} />
+                <Legend />
+                <Bar dataKey="target" name="Target" fill="var(--border)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="collected" name="Collected" fill="var(--green)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Funding Overview Charts */}
+        {price > 0 && fundingData.length > 0 && (
+          <div className="grid-2" style={{ alignItems: 'start', marginBottom: '40px' }}>
+            <div className="card" style={{ padding: '28px' }}>
+              <span className="label" style={{ marginBottom: '16px' }}>FUNDING STATUS</span>
+              <h2 style={{ fontSize: '1.3rem', marginBottom: '8px' }}>Budget vs Collected</h2>
+              <div style={{ position: 'relative' }}>
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={fundingData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%" cy="50%"
+                      innerRadius={70} outerRadius={100}
+                      paddingAngle={3}
+                    >
+                      <Cell fill="var(--green)" />
+                      <Cell fill="var(--border)" />
+                    </Pie>
+                    <Tooltip formatter={value => `BDT ${value.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--green)' }}>{collectionPercent}%</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--medium-gray)', letterSpacing: '1px' }}>COLLECTED</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', fontSize: '0.85rem' }}>
+                <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: 'var(--green)', marginRight: '6px' }}></span>Collected: BDT {totalCollected.toLocaleString()}</span>
+                <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: 'var(--border)', marginRight: '6px' }}></span>Remaining: BDT {remainingBudget.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '28px' }}>
+              <span className="label" style={{ marginBottom: '16px' }}>CASH FLOW</span>
+              <h2 style={{ fontSize: '1.3rem', marginBottom: '8px' }}>Cumulative Collections</h2>
+              {cumulativeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={240}>
+                  <AreaChart data={cumulativeData}>
+                    <defs>
+                      <linearGradient id="collectionFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--green)" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="var(--green)" stopOpacity={0.03} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--medium-gray)' }} />
+                    <YAxis tickFormatter={value => `${Math.round(value / 100000)}L`} tick={{ fontSize: 12, fill: 'var(--medium-gray)' }} />
+                    <Tooltip formatter={value => `BDT ${value.toLocaleString()}`} />
+                    <Area type="monotone" dataKey="total" stroke="var(--green)" strokeWidth={2.5} fill="url(#collectionFill)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-muted" style={{ paddingTop: '80px' }}>No payments recorded yet — the chart will appear after the first transaction.</p>
+              )}
             </div>
           </div>
         )}
