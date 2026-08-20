@@ -175,7 +175,7 @@ export default function ProjectDetails() {
         </div>
 
         {/* Interactive Floor Plans & Unit Availability Selector */}
-        <UnitSelector project={project} />
+        <UnitSelector project={project} onProjectUpdate={data => setProject(data)} />
 
         {/* Cost Breakdown */}
         {hasCostBreakdown && (

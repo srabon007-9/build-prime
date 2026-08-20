@@ -32,6 +32,41 @@ function createDefaultStages(costs) {
   ];
 }
 
+// ── Generate realistic flat units for a building ─────────────────────
+function generateUnits({ totalFloors, flatsPerFloor, defaultAreaSqFt, estimatedPrice }) {
+  const units = [];
+  const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const facings = ['South', 'South-East', 'South-West', 'East', 'West', 'North-East'];
+  const pricePerSqFt = estimatedPrice > 0 ? Math.round(estimatedPrice / (totalFloors * flatsPerFloor * defaultAreaSqFt)) : 5500;
+
+  for (let floor = 1; floor <= totalFloors; floor++) {
+    for (let flat = 0; flat < flatsPerFloor; flat++) {
+      const label = labels[flat] || String(flat + 1);
+      const flatNumber = `${floor}${label}`;
+      // Higher floors get slight area and price premium
+      const floorPremium = 1 + (floor - 1) * 0.02;
+      const area = Math.round(defaultAreaSqFt * floorPremium);
+      const price = Math.round(area * pricePerSqFt * floorPremium);
+
+      units.push({
+        flatNumber,
+        floor,
+        type: floor === totalFloors ? 'Premium Unit' : 'Standard Apartment',
+        areaSqFt: area,
+        beds: defaultAreaSqFt >= 1500 ? 4 : 3,
+        baths: defaultAreaSqFt >= 1500 ? 3 : 2,
+        balconies: 2,
+        facing: facings[(floor + flat) % facings.length],
+        priceBDT: price,
+        status: 'Available',
+        bookedBy: null,
+        bookedAt: null
+      });
+    }
+  }
+  return units;
+}
+
 exports.getProjects = async (req, res) => {
   try {
     const projects = await Project.find().sort({ createdAt: -1 });
@@ -141,7 +176,11 @@ exports.createProject = async (req, res) => {
       permitCost,
       contingencyPercent,
       investorCount,
-      transactions
+      transactions,
+      totalFloors: rawFloors,
+      flatsPerFloor: rawFlats,
+      defaultAreaSqFt: rawArea,
+      bookingFeePercent: rawFee
     } = req.body;
 
     if (!name || !location || !projectType || !description) {
@@ -166,6 +205,15 @@ exports.createProject = async (req, res) => {
     const savedTransactions = Array.isArray(transactions) ? transactions : [];
     const totalCollected = savedTransactions.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
+    // Building configuration
+    const totalFloors = Number(rawFloors) || 6;
+    const flatsPerFloor = Number(rawFlats) || 3;
+    const defaultAreaSqFt = Number(rawArea) || 1200;
+    const bookingFeePercent = Number(rawFee) || 10;
+
+    // Auto-generate flat units based on building configuration
+    const units = generateUnits({ totalFloors, flatsPerFloor, defaultAreaSqFt, estimatedPrice });
+
     const totalProjects = await Project.countDocuments();
     const project = new Project({
       name,
@@ -188,6 +236,12 @@ exports.createProject = async (req, res) => {
       totalCollected,
       stages,
       transactions: savedTransactions,
+      units,
+      customerPayments: [],
+      totalFloors,
+      flatsPerFloor,
+      defaultAreaSqFt,
+      bookingFeePercent,
       progressPercentage: 0,
       startDate: new Date(),
       expectedCompletionDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
@@ -211,7 +265,8 @@ exports.updateProject = async (req, res) => {
       'status', 'progressPercentage',
       'landPrice', 'materialCost', 'equipmentCost', 'laborCost',
       'permitCost', 'contingencyPercent', 'investorCount',
-      'startDate', 'expectedCompletionDate'
+      'startDate', 'expectedCompletionDate',
+      'totalFloors', 'flatsPerFloor', 'defaultAreaSqFt', 'bookingFeePercent'
     ];
 
     allowed.forEach(field => {
@@ -285,6 +340,175 @@ exports.addTransaction = async (req, res) => {
       stage.status = stage.collectedAmount >= stage.targetAmount ? 'Completed' : 'Collecting';
     }
 
+    await project.save();
+    res.json(project);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// =====================================================================
+// 🏠 FLAT BOOKING & PAYMENT MANAGEMENT
+// =====================================================================
+
+// Admin assigns a flat to a customer (by email lookup)
+exports.bookUnit = async (req, res) => {
+  try {
+    const { unitId, customerEmail, bookingAmount } = req.body;
+
+    if (!unitId || !customerEmail) {
+      return res.status(400).json({ message: 'Unit ID and customer email are required' });
+    }
+
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    const unit = project.units.id(unitId);
+    if (!unit) return res.status(404).json({ message: 'Flat not found' });
+
+    if (unit.status !== 'Available') {
+      return res.status(400).json({ message: `Flat ${unit.flatNumber} is already ${unit.status}` });
+    }
+
+    // Find the customer by email
+    const customer = await User.findOne({ email: customerEmail.toLowerCase().trim() });
+    if (!customer) {
+      return res.status(404).json({ message: `No registered customer found with email: ${customerEmail}` });
+    }
+
+    // Assign flat to customer
+    unit.status = 'Booked';
+    unit.bookedBy = customer._id;
+    unit.bookedAt = new Date();
+
+    // Use custom negotiated booking amount if set by admin, otherwise fallback to % calc
+    const customFee = Number(bookingAmount);
+    const bookingFee = (!isNaN(customFee) && customFee >= 0)
+      ? customFee
+      : Math.round(unit.priceBDT * (project.bookingFeePercent || 10) / 100);
+
+    project.customerPayments.push({
+      unitId: unit._id,
+      flatNumber: unit.flatNumber,
+      userId: customer._id,
+      customerName: customer.name,
+      milestone: 'Booking Money',
+      amount: bookingFee,
+      paymentDate: new Date(),
+      paymentMethod: 'Offline',
+      note: `Agreed Booking Money for Flat ${unit.flatNumber}`,
+      verifiedByAdmin: true,
+      status: 'Verified'
+    });
+
+    await project.save();
+    res.json(project);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Admin records an offline payment for a customer's flat
+exports.recordFlatPayment = async (req, res) => {
+  try {
+    const { unitId, milestone, amount, paymentMethod, note, paymentDate } = req.body;
+
+    if (!unitId || !milestone || !amount) {
+      return res.status(400).json({ message: 'Unit ID, milestone and amount are required' });
+    }
+
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    const unit = project.units.id(unitId);
+    if (!unit) return res.status(404).json({ message: 'Flat not found' });
+
+    if (!unit.bookedBy) {
+      return res.status(400).json({ message: `Flat ${unit.flatNumber} has no assigned customer` });
+    }
+
+    const customer = await User.findById(unit.bookedBy);
+    if (!customer) {
+      return res.status(404).json({ message: 'Assigned customer not found in system' });
+    }
+
+    const paidAmount = Number(amount) || 0;
+    if (paidAmount <= 0) {
+      return res.status(400).json({ message: 'Payment amount must be greater than zero' });
+    }
+
+    project.customerPayments.push({
+      unitId: unit._id,
+      flatNumber: unit.flatNumber,
+      userId: customer._id,
+      customerName: customer.name,
+      milestone,
+      amount: paidAmount,
+      paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+      paymentMethod: paymentMethod || 'Bank Transfer',
+      note: note || '',
+      verifiedByAdmin: true,
+      status: 'Verified'
+    });
+
+    await project.save();
+    res.json(project);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Admin verifies or rejects a customer-submitted payment request
+exports.verifyFlatPayment = async (req, res) => {
+  try {
+    const { action } = req.body; // 'verify' or 'reject'
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    const payment = project.customerPayments.id(req.params.paymentId);
+    if (!payment) return res.status(404).json({ message: 'Payment record not found' });
+
+    if (action === 'reject') {
+      payment.status = 'Rejected';
+      payment.verifiedByAdmin = false;
+    } else {
+      payment.status = 'Verified';
+      payment.verifiedByAdmin = true;
+    }
+
+    await project.save();
+    res.json(project);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Admin toggles unit status (Available / Booked / Sold)
+exports.updateUnitStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!['Available', 'Booked', 'Sold'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be Available, Booked or Sold' });
+    }
+
+    const project = await Project.findById(req.params.id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    const unit = project.units.id(req.params.unitId);
+    if (!unit) return res.status(404).json({ message: 'Flat not found' });
+
+    // If setting back to Available, clear the booking
+    if (status === 'Available') {
+      unit.bookedBy = null;
+      unit.bookedAt = null;
+    }
+
+    unit.status = status;
     await project.save();
     res.json(project);
   } catch (err) {

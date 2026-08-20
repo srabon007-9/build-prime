@@ -35,6 +35,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/estimates', require('./routes/estimationRoutes'));
 app.use('/api/consultations', require('./routes/consultationRoutes'));
+app.use('/api/customer', require('./routes/customerRoutes'));
 
 // Root test route to easily check backend health on Vercel
 app.get('/api', (req, res) => {

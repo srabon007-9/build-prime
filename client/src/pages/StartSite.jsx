@@ -13,7 +13,8 @@ import { useToast } from '../components/Toast'
 const EMPTY = {
   name: '', location: '', projectType: 'Residential', description: '', image: '',
   landPrice: '', materialCost: '', equipmentCost: '', laborCost: '',
-  permitCost: '', contingencyPercent: 10, investorCount: ''
+  permitCost: '', contingencyPercent: 10, investorCount: '',
+  totalFloors: 6, flatsPerFloor: 3, defaultAreaSqFt: 1200, bookingFeePercent: 10
 }
 
 function toNum(v) { return Number(v) || 0 }
@@ -100,7 +101,11 @@ export default function StartSite() {
       laborCost: project.laborCost || '',
       permitCost: project.permitCost || '',
       contingencyPercent: project.contingencyPercent ?? 10,
-      investorCount: project.investorCount || ''
+      investorCount: project.investorCount || '',
+      totalFloors: project.totalFloors || 6,
+      flatsPerFloor: project.flatsPerFloor || 3,
+      defaultAreaSqFt: project.defaultAreaSqFt || 1200,
+      bookingFeePercent: project.bookingFeePercent || 10
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -226,6 +231,32 @@ export default function StartSite() {
                       <input id={field} name={field} type="number" min="0" value={form[field]} onChange={update} />
                     </div>
                   ))}
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginBottom: 16 }}>
+                <h3 style={{ marginBottom: 16, fontSize: '1rem' }}>🏢 Building Configuration</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--medium-gray)', marginBottom: 16 }}>Configure the building layout — flats will be auto-generated (e.g. 1A, 1B, 1C per floor).</p>
+                <div className="grid-2" style={{ gap: 16 }}>
+                  <div className="form-group">
+                    <label htmlFor="totalFloors">Total Floors</label>
+                    <input id="totalFloors" name="totalFloors" type="number" min="1" max="30" value={form.totalFloors} onChange={update} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="flatsPerFloor">Flats per Floor</label>
+                    <input id="flatsPerFloor" name="flatsPerFloor" type="number" min="1" max="10" value={form.flatsPerFloor} onChange={update} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="defaultAreaSqFt">Default Area (Sq.Ft per flat)</label>
+                    <input id="defaultAreaSqFt" name="defaultAreaSqFt" type="number" min="400" value={form.defaultAreaSqFt} onChange={update} />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="bookingFeePercent">Booking Fee %</label>
+                    <input id="bookingFeePercent" name="bookingFeePercent" type="number" min="1" max="50" value={form.bookingFeePercent} onChange={update} />
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--medium-gray)', marginTop: 8 }}>
+                  This will generate <strong>{toNum(form.totalFloors) * toNum(form.flatsPerFloor)}</strong> flats across <strong>{toNum(form.totalFloors)}</strong> floors.
                 </div>
               </div>
 

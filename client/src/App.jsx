@@ -39,6 +39,8 @@ import StartSite from './pages/StartSite'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import MyEstimates from './pages/MyEstimates'
+import MySpendings from './pages/MySpendings'
+import UserPortfolio from './pages/UserPortfolio'
 import AdminQuotes from './pages/AdminQuotes'
 import AdminDashboard from './pages/AdminDashboard'
 import NotFound from './pages/NotFound'
@@ -63,6 +65,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/my-estimates" element={<MyEstimates />} />
+          <Route path="/my-spendings" element={<MySpendings />} />
+          <Route path="/my-portfolio" element={<UserPortfolio />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
