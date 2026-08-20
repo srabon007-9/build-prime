@@ -1,10 +1,3 @@
-// ====================================================================
-// 🔗 NAVBAR
-// ====================================================================
-// "My Flat" link only appears when the logged-in user has a booked flat.
-// This is checked once on mount via a lightweight API call.
-// ====================================================================
-
 import React, { useState, useEffect } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { getToken, isAdmin, apiFetch } from '../api'

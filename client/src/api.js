@@ -1,15 +1,3 @@
-// ====================================================================
-// 🌐 API & AUTHENTICATION UTILITIES
-// ====================================================================
-// - API_URL   : Backend server endpoint URL
-// - getToken  : Retrieves current saved login JWT token from localStorage
-// - getUser   : Retrieves current logged-in user profile from localStorage
-// - isAdmin   : Returns true if logged-in user role is 'admin'
-// - apiFetch  : Shared helper function for API requests with auto auth header
-// ====================================================================
-
-// In production (Vercel), API is served from relative /api unless VITE_API_URL is specified
-// In local development, fallback to http://localhost:5500/api when on localhost
 const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
 
 export const API_URL = import.meta.env.VITE_API_URL || (isLocalhost ? 'http://localhost:5500/api' : '/api')

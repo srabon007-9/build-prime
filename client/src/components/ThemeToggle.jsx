@@ -1,10 +1,3 @@
-// ====================================================================
-// 🌗 THEME TOGGLE COMPONENT (ThemeToggle.jsx)
-// ====================================================================
-// Toggles website between Light and Dark mode with local storage persistence.
-// Adds data-theme="dark" | "light" to document element.
-// ====================================================================
-
 import React, { useEffect, useState } from 'react'
 
 export default function ThemeToggle() {

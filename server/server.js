@@ -6,49 +6,31 @@ const connectDB = require('./config/db');
 dotenv.config();
 const app = express();
 
-// Middleware
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:3000',
-  process.env.CLIENT_URL,
-].filter(Boolean)
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. Postman, mobile apps, or relative /api calls)
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) return callback(null, true)
-    callback(new Error(`CORS: origin ${origin} not allowed`))
-  },
-  credentials: true
-}))
+app.use(cors());
 app.use(express.json());
 
-// Ensure Database Connection for Serverless Executions
+// Ensure MongoDB database is connected before handling requests
 app.use(async (req, res, next) => {
   await connectDB();
   next();
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/estimates', require('./routes/estimationRoutes'));
 app.use('/api/consultations', require('./routes/consultationRoutes'));
 app.use('/api/customer', require('./routes/customerRoutes'));
 
-// Root test route to easily check backend health on Vercel
 app.get('/api', (req, res) => {
-  res.json({ message: 'BuildPrime API is running smoothly on Vercel' });
+  res.json({ message: 'BuildPrime API server is running' });
 });
 
-// Only listen on a port during local development
 if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT || 5500;
   app.listen(PORT, () => {
-    console.log(`Server running locally on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
-// REQUIRED FOR VERCEL: Export the Express app instance
 module.exports = app;

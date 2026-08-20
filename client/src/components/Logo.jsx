@@ -1,13 +1,3 @@
-// ====================================================================
-// 📐 BRAND LOGO COMPONENT (Logo.jsx)
-// ====================================================================
-// Combines the geometric "B" structural mark with the BuildPrime wordmark.
-// Props:
-// - size     : Height & width of SVG emblem (default: 32)
-// - showText : Whether to display "BuildPrime" text (default: true)
-// - onClick  : Optional click handler (e.g. closing mobile menu)
-// ====================================================================
-
 import React from 'react'
 import { Link } from 'react-router-dom'
 
