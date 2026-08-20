@@ -41,6 +41,10 @@ export async function apiFetch(path, options = {}) {
     } catch (e) {
       data = { message: `Server returned status ${res.status}` }
     }
+    if (res.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    }
     return { ok: res.ok, status: res.status, data }
   } catch (err) {
     return { ok: false, status: 0, data: { message: 'Network error — check your connection' } }

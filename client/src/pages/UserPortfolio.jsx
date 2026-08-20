@@ -40,8 +40,14 @@ export default function UserPortfolio() {
 
   async function fetchPortfolio() {
     setLoading(true)
-    const { ok, data } = await apiFetch('/customer/portfolio')
+    const { ok, status, data } = await apiFetch('/customer/portfolio')
     if (!ok) {
+      if (status === 401 || (data.message && data.message.includes('not found'))) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        navigate('/login')
+        return
+      }
       setError(data.message || 'Could not load your user portfolio')
       setLoading(false)
       return

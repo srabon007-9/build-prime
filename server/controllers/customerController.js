@@ -141,7 +141,7 @@ exports.getCustomerPortfolio = async (req, res) => {
     }
 
     const user = await User.findById(targetUserId).select('-password');
-    if (!user) return res.status(404).json({ message: 'User profile not found' });
+    if (!user) return res.status(401).json({ message: 'User profile not found. Please log in again.' });
 
     // 1. Fetch flats booked by this customer
     const projects = await Project.find({ 'units.bookedBy': user._id });
