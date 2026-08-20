@@ -13,8 +13,8 @@ const connectDB = async () => {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(uri).then((mongooseInstance) => {
-      console.log('MongoDB connected successfully');
+    cached.promise = mongoose.connect(uri, { dbName: 'buildprime-db' }).then((mongooseInstance) => {
+      console.log('MongoDB connected successfully to buildprime-db');
       return mongooseInstance;
     });
   }
