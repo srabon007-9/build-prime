@@ -217,51 +217,186 @@ export default function UnitSelector({ project, onProjectUpdate }) {
         />
       )}
 
-      {/* Record Payment Modal */}
-      {paymentUnit && (
-        <div className="booking-modal-overlay" onClick={() => setPaymentUnit(null)}>
-          <div className="booking-modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span className="label">Record Offline Payment</span>
-              <button onClick={() => setPaymentUnit(null)} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer' }}>✕</button>
-            </div>
-            <h2>Flat {paymentUnit.flatNumber}</h2>
-            <p className="text-muted" style={{ marginBottom: 20 }}>Record a verified offline payment for this customer's flat.</p>
+      {/* Record Payment & Payment History Modal */}
+      {paymentUnit && (() => {
+        const unitPayments = (project.customerPayments || []).filter(
+          p => (p.unitId && p.unitId.toString() === paymentUnit._id.toString()) || p.flatNumber === paymentUnit.flatNumber
+        )
+        const verifiedPayments = unitPayments.filter(p => p.verifiedByAdmin === true && p.status !== 'Rejected')
+        const totalPaid = verifiedPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+        const remainingDue = Math.max(0, (paymentUnit.priceBDT || 0) - totalPaid)
+        const progressPercent = paymentUnit.priceBDT > 0 ? Math.round((totalPaid / paymentUnit.priceBDT) * 100) : 0
+        const customerName = unitPayments[0]?.customerName || (paymentUnit.bookedBy?.name ? paymentUnit.bookedBy.name : 'Assigned Customer')
 
-            <form onSubmit={recordPayment}>
-              <div className="form-group">
-                <label>Payment Milestone</label>
-                <select value={paymentForm.milestone} onChange={e => setPaymentForm(p => ({ ...p, milestone: e.target.value }))} required>
-                  <option value="">Select milestone</option>
-                  {['Booking Money', 'Down Payment', '1st Installment', '2nd Installment', '3rd Installment', '4th Installment', '5th Installment', 'Final Payment', 'Registration Fee', 'Utility Charges', 'Other']
-                    .map(m => <option key={m}>{m}</option>)}
-                </select>
-              </div>
-              <div className="grid-2" style={{ gap: 12 }}>
-                <div className="form-group">
-                  <label>Amount (BDT)</label>
-                  <input type="number" min="1" value={paymentForm.amount} onChange={e => setPaymentForm(p => ({ ...p, amount: e.target.value }))} placeholder="e.g. 500000" required />
+        return (
+          <div className="booking-modal-overlay" onClick={() => setPaymentUnit(null)}>
+            <div className="booking-modal" style={{ maxWidth: '660px', width: '100%' }} onClick={e => e.stopPropagation()}>
+              
+              {/* Modal Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                <div>
+                  <span className="label" style={{ marginBottom: 4 }}>FLAT PAYMENT & HISTORY</span>
+                  <h2 style={{ fontSize: '1.4rem', margin: '4px 0 2px' }}>Flat {paymentUnit.flatNumber}</h2>
+                  <p className="text-muted" style={{ fontSize: '0.88rem', margin: 0 }}>
+                    {paymentUnit.type} · {paymentUnit.areaSqFt} sqft · Customer: <strong>{customerName}</strong>
+                  </p>
                 </div>
-                <div className="form-group">
-                  <label>Payment Method</label>
-                  <select value={paymentForm.paymentMethod} onChange={e => setPaymentForm(p => ({ ...p, paymentMethod: e.target.value }))}>
-                    {['Bank Transfer', 'Cash', 'Cheque', 'bKash', 'Nagad', 'Other'].map(m => <option key={m}>{m}</option>)}
-                  </select>
+                <button 
+                  onClick={() => setPaymentUnit(null)} 
+                  style={{ background: 'var(--light-gray)', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Financial Progress & Overview Card */}
+              <div style={{ background: 'var(--light-gray)', borderRadius: 'var(--radius)', padding: '16px 20px', marginBottom: 20, border: '1px solid var(--border)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, textAlign: 'center', marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Price</div>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--black)' }}>৳{(paymentUnit.priceBDT || 0).toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Verified Paid</div>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--green)' }}>৳{totalPaid.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--medium-gray)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Remaining Due</div>
+                    <div style={{ fontWeight: 800, fontSize: '1.05rem', color: remainingDue > 0 ? '#c62828' : 'var(--green)' }}>
+                      ৳{remainingDue.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                <div className="progress-bar-container" style={{ height: 8, borderRadius: 4, background: '#e2e8f0' }}>
+                  <div className="progress-bar-fill" style={{ width: `${progressPercent}%`, borderRadius: 4, background: 'var(--green)' }} />
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '0.78rem', fontWeight: 700, color: 'var(--green)', marginTop: 4 }}>
+                  {progressPercent}% Paid
                 </div>
               </div>
-              <div className="form-group">
-                <label>Note / Transaction Ref (optional)</label>
-                <input value={paymentForm.note} onChange={e => setPaymentForm(p => ({ ...p, note: e.target.value }))} placeholder="e.g. Received via Sonali Bank cheque #12345" />
+
+              {/* Payment History Section */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <h3 style={{ fontSize: '1.05rem', margin: 0, fontWeight: 700 }}>
+                    📜 Payment History ({unitPayments.length})
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--medium-gray)' }}>
+                    {verifiedPayments.length} verified
+                  </span>
+                </div>
+
+                {unitPayments.length > 0 ? (
+                  <div style={{ maxHeight: '190px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+                    <table className="payment-table" style={{ fontSize: '0.82rem', margin: 0 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ padding: '8px 12px' }}>Milestone</th>
+                          <th style={{ padding: '8px 12px' }}>Amount</th>
+                          <th style={{ padding: '8px 12px' }}>Date</th>
+                          <th style={{ padding: '8px 12px' }}>Method</th>
+                          <th style={{ padding: '8px 12px' }}>Status</th>
+                          <th style={{ padding: '8px 12px' }}>Note / Ref</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...unitPayments]
+                          .sort((a, b) => new Date(b.paymentDate) - new Date(a.paymentDate))
+                          .map((p, idx) => {
+                            const isVerified = p.status === 'Verified' || (p.verifiedByAdmin && p.status !== 'Rejected')
+                            const isRejected = p.status === 'Rejected'
+
+                            return (
+                              <tr key={p._id || idx}>
+                                <td style={{ padding: '8px 12px', fontWeight: 600 }}>{p.milestone}</td>
+                                <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--green)' }}>
+                                  ৳{(p.amount || 0).toLocaleString()}
+                                </td>
+                                <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
+                                  {new Date(p.paymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </td>
+                                <td style={{ padding: '8px 12px' }}>{p.paymentMethod || 'Offline'}</td>
+                                <td style={{ padding: '8px 12px' }}>
+                                  {isVerified ? (
+                                    <span style={{ fontSize: '0.72rem', color: 'var(--green)', background: 'var(--green-light)', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                      ✓ Verified
+                                    </span>
+                                  ) : isRejected ? (
+                                    <span style={{ fontSize: '0.72rem', color: '#991B1B', background: '#FEE2E2', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                      ✕ Rejected
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontSize: '0.72rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                      ⏳ Pending
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ padding: '8px 12px', color: 'var(--medium-gray)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {p.note || '—'}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ background: 'var(--light-gray)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center', color: 'var(--medium-gray)', fontSize: '0.88rem' }}>
+                    No payment history recorded for Flat {paymentUnit.flatNumber} yet.
+                  </div>
+                )}
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn btn-secondary" onClick={() => setPaymentUnit(null)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Record Payment ✓</button>
+
+              {/* Record New Payment Form */}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 18 }}>
+                <h3 style={{ fontSize: '1rem', marginBottom: 12, fontWeight: 700 }}>
+                  + Record New Offline Payment
+                </h3>
+
+                <form onSubmit={recordPayment}>
+                  <div className="form-group">
+                    <label>Payment Milestone</label>
+                    <select value={paymentForm.milestone} onChange={e => setPaymentForm(p => ({ ...p, milestone: e.target.value }))} required>
+                      <option value="">Select milestone</option>
+                      {['Booking Money', 'Down Payment', '1st Installment', '2nd Installment', '3rd Installment', '4th Installment', '5th Installment', 'Final Payment', 'Registration Fee', 'Utility Charges', 'Other']
+                        .map(m => <option key={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid-2" style={{ gap: 12 }}>
+                    <div className="form-group">
+                      <label>Amount (BDT)</label>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        value={paymentForm.amount} 
+                        onChange={e => setPaymentForm(p => ({ ...p, amount: e.target.value }))} 
+                        placeholder={remainingDue > 0 ? `Remaining: ${remainingDue}` : "e.g. 500000"} 
+                        required 
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Payment Method</label>
+                      <select value={paymentForm.paymentMethod} onChange={e => setPaymentForm(p => ({ ...p, paymentMethod: e.target.value }))}>
+                        {['Bank Transfer', 'Cash', 'Cheque', 'bKash', 'Nagad', 'Other'].map(m => <option key={m}>{m}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Note / Transaction Ref (optional)</label>
+                    <input value={paymentForm.note} onChange={e => setPaymentForm(p => ({ ...p, note: e.target.value }))} placeholder="e.g. Received via Sonali Bank cheque #12345" />
+                  </div>
+                  <div className="modal-actions" style={{ marginTop: 16 }}>
+                    <button type="button" className="btn btn-secondary" onClick={() => setPaymentUnit(null)}>Close</button>
+                    <button type="submit" className="btn btn-primary">Record Payment ✓</button>
+                  </div>
+                  {msg && <p className="form-status" style={{ marginTop: 10, textAlign: 'center' }}>{msg}</p>}
+                </form>
               </div>
-              {msg && <p className="form-status" style={{ marginTop: 12, textAlign: 'center' }}>{msg}</p>}
-            </form>
+
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

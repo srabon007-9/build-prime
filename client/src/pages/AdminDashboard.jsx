@@ -45,6 +45,7 @@ function StatCard({ label, value, sub }) {
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [error, setError] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState('All')
   const user = getUser()
 
   useEffect(() => {
@@ -64,9 +65,15 @@ export default function AdminDashboard() {
   if (user.role !== 'admin') return <div className="container section"><div className="card empty-state">Admin access only</div></div>
   if (!stats) return <div className="container section" style={{ textAlign: 'center', color: 'var(--medium-gray)' }}>Loading dashboard...</div>
 
-  const { totals, statusBreakdown, perProject, recentTransactions, monthlyCollections } = stats
+  const { totals, statusBreakdown, perProject, recentTransactions = [], monthlyCollections = [] } = stats
   const collectionRate = totals.totalBudget ? Math.round((totals.totalCollected / totals.totalBudget) * 100) : 0
   const remaining = totals.totalBudget - totals.totalCollected
+
+  const filteredTransactions = recentTransactions.filter(item => {
+    if (paymentFilter === 'Flat Payments') return item.type === 'Flat Payment'
+    if (paymentFilter === 'Investor Payments') return item.type !== 'Flat Payment'
+    return true
+  })
 
   return (
     <div className="container section">
@@ -154,23 +161,108 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Recent Transactions Feed */}
+      {/* Recent Transactions & Payment History */}
       <div className="card" style={{ padding: '28px' }}>
-        <span className="label" style={{ marginBottom: '16px' }}>LATEST ACTIVITY</span>
-        <h2 style={{ fontSize: '1.3rem', marginBottom: '20px' }}>Recent Investor Payments</h2>
-        {recentTransactions.length > 0 ? (
-          <div className="transaction-list">
-            {recentTransactions.map((item, index) => (
-              <div className="transaction-row" key={index}>
-                <span style={{ fontWeight: 600 }}>{item.investorName}</span>
-                <span style={{ color: 'var(--medium-gray)' }}>{item.projectName} · {item.stageName}</span>
-                <span style={{ color: 'var(--medium-gray)', fontSize: '0.85rem' }}>{new Date(item.date).toLocaleDateString()}</span>
-                <strong style={{ color: 'var(--green)' }}>BDT {(item.amount || 0).toLocaleString()}</strong>
-              </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: '20px' }}>
+          <div>
+            <span className="label" style={{ marginBottom: '6px' }}>LATEST ACTIVITY & REVENUE</span>
+            <h2 style={{ fontSize: '1.3rem', margin: 0 }}>Payment Transactions & History</h2>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {['All', 'Flat Payments', 'Investor Payments'].map(filterOption => (
+              <button
+                key={filterOption}
+                onClick={() => setPaymentFilter(filterOption)}
+                className={paymentFilter === filterOption ? 'btn btn-primary' : 'btn btn-secondary'}
+                style={{ padding: '6px 14px', fontSize: '0.82rem', borderRadius: 20 }}
+              >
+                {filterOption}
+              </button>
             ))}
           </div>
+        </div>
+
+        {filteredTransactions.length > 0 ? (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="payment-table" style={{ width: '100%', fontSize: '0.88rem' }}>
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Payer / Customer</th>
+                  <th>Project & Unit / Stage</th>
+                  <th>Milestone</th>
+                  <th>Method</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTransactions.map((item, index) => {
+                  const isFlat = item.type === 'Flat Payment'
+                  const isVerified = item.status === 'Verified' || (item.verifiedByAdmin && item.status !== 'Rejected')
+                  const isRejected = item.status === 'Rejected'
+
+                  return (
+                    <tr key={index}>
+                      <td>
+                        <span style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 12,
+                          background: isFlat ? '#E0F2FE' : '#FEF3C7',
+                          color: isFlat ? '#0369A1' : '#92400E'
+                        }}>
+                          {isFlat ? '🏠 Flat' : '🤝 Investor'}
+                        </span>
+                      </td>
+                      <td style={{ fontWeight: 600 }}>
+                        {item.partyName || item.investorName || 'Customer'}
+                      </td>
+                      <td>
+                        {item.projectId ? (
+                          <Link to={`/projects/${item.projectId}`} style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
+                            {item.projectName}
+                          </Link>
+                        ) : (
+                          <span>{item.projectName}</span>
+                        )}
+                        {item.flatNumber && <span style={{ marginLeft: 6, color: 'var(--green)', fontWeight: 700 }}>({item.targetLabel || `Flat ${item.flatNumber}`})</span>}
+                      </td>
+                      <td style={{ color: 'var(--medium-gray)' }}>
+                        {item.milestone || item.stageName || '—'}
+                      </td>
+                      <td>{item.paymentMethod || 'Bank Transfer'}</td>
+                      <td style={{ whiteSpace: 'nowrap', color: 'var(--medium-gray)', fontSize: '0.84rem' }}>
+                        {new Date(item.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td>
+                        {isVerified ? (
+                          <span style={{ fontSize: '0.74rem', color: 'var(--green)', background: 'var(--green-light)', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                            ✓ Verified
+                          </span>
+                        ) : isRejected ? (
+                          <span style={{ fontSize: '0.74rem', color: '#991B1B', background: '#FEE2E2', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                            ✕ Rejected
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.74rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                            ⏳ Pending
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--green)' }}>
+                        BDT {(item.amount || 0).toLocaleString()}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <p className="text-muted">No payments recorded yet.</p>
+          <p className="text-muted" style={{ padding: '20px 0', textAlign: 'center' }}>No payments recorded yet under this filter.</p>
         )}
       </div>
     </div>

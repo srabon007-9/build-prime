@@ -21,6 +21,7 @@ export default function ProjectDetails() {
   // --- 1. STATE ---
   const [project, setProject] = useState(null)
   const [payment, setPayment] = useState({ investorName: '', stageName: '', amount: '', note: '' })
+  const [txFilter, setTxFilter] = useState('All')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const user = getUser()
@@ -71,9 +72,44 @@ export default function ProjectDetails() {
   const hasCostBreakdown = project.landPrice || project.materialCost || project.equipmentCost || project.laborCost || project.permitCost
   const stages = project.stages || []
   const transactions = project.transactions || []
+  const customerPayments = project.customerPayments || []
 
-  // Chart data: budget vs collected donut
-  const totalCollected = project.totalCollected || 0
+  // Build unified all transactions list for this project
+  const allProjectPayments = [
+    ...transactions.map(t => ({
+      _id: t._id,
+      type: 'Investor Payment',
+      partyName: t.investorName,
+      targetLabel: t.stageName,
+      milestone: t.stageName,
+      amount: t.amount || 0,
+      date: t.date,
+      paymentMethod: 'Bank Transfer',
+      status: 'Verified',
+      note: t.note || ''
+    })),
+    ...customerPayments.map(cp => ({
+      _id: cp._id,
+      type: 'Flat Payment',
+      partyName: cp.customerName,
+      flatNumber: cp.flatNumber,
+      targetLabel: `Flat ${cp.flatNumber}`,
+      milestone: cp.milestone,
+      amount: cp.amount || 0,
+      date: cp.paymentDate,
+      paymentMethod: cp.paymentMethod || 'Offline',
+      status: cp.status || (cp.verifiedByAdmin ? 'Verified' : 'Pending'),
+      verifiedByAdmin: cp.verifiedByAdmin,
+      note: cp.note || ''
+    }))
+  ].sort((a, b) => new Date(b.date) - new Date(a.date))
+
+  // Verified total collected
+  const verifiedFlatPaid = customerPayments
+    .filter(cp => cp.verifiedByAdmin === true && cp.status !== 'Rejected')
+    .reduce((sum, cp) => sum + (cp.amount || 0), 0)
+  const totalInvestorPaid = transactions.reduce((sum, t) => sum + (t.amount || 0), 0)
+  const totalCollected = project.totalCollected || (totalInvestorPaid + verifiedFlatPaid)
   const remainingBudget = Math.max(0, price - totalCollected)
   const fundingData = [
     { name: 'Collected', value: totalCollected },
@@ -88,8 +124,9 @@ export default function ProjectDetails() {
     target: stage.targetAmount || 0
   }))
 
-  // Chart data: cumulative collections over time
-  const cumulativeData = [...transactions]
+  // Chart data: cumulative collections over time (including verified flat payments)
+  const cumulativeData = [...allProjectPayments]
+    .filter(p => p.status === 'Verified' || (p.verifiedByAdmin && p.status !== 'Rejected'))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .reduce((acc, item, index) => {
       const previous = index > 0 ? acc[index - 1].total : 0
@@ -301,35 +338,123 @@ export default function ProjectDetails() {
 
         {/* Transaction History & Admin Record Payment */}
         <div className="card cost-breakdown-card">
-          <span className="label">Transaction Monitor</span>
-          <h2>All Project Transactions</h2>
-          {user.role === 'admin' && (
-            <form className="payment-form" onSubmit={submitPayment}>
-              <input name="investorName" value={payment.investorName} onChange={updatePayment} placeholder="Investor name" required />
-              <select name="stageName" value={payment.stageName} onChange={updatePayment} required>
-                <option value="">Select stage</option>
-                {stages.map(stage => <option key={stage.name}>{stage.name}</option>)}
-              </select>
-              <input name="amount" type="number" value={payment.amount} onChange={updatePayment} placeholder="Amount" required />
-              <input name="note" value={payment.note} onChange={updatePayment} placeholder="Note" />
-              <button className="btn btn-primary">Record Payment</button>
-              {message && <p className="form-status">{message}</p>}
-            </form>
-          )}
-
-          {transactions.length > 0 ? (
-            <div className="transaction-list">
-              {transactions.map((item, index) => (
-                <div className="transaction-row" key={index}>
-                  <span style={{ fontWeight: 600 }}>{item.investorName}</span>
-                  <span style={{ color: 'var(--medium-gray)' }}>{item.stageName}</span>
-                  <strong style={{ color: 'var(--green)' }}>BDT {(item.amount || 0).toLocaleString()}</strong>
-                </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+            <div>
+              <span className="label">Transaction Monitor</span>
+              <h2 style={{ margin: 0 }}>All Project Transactions ({allProjectPayments.length})</h2>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['All', 'Flat Payments', 'Investor Payments'].map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => setTxFilter(opt)}
+                  className={txFilter === opt ? 'btn btn-primary' : 'btn btn-secondary'}
+                  style={{ padding: '6px 14px', fontSize: '0.82rem', borderRadius: 20 }}
+                >
+                  {opt}
+                </button>
               ))}
             </div>
-          ) : (
-            <p className="text-muted">No payments recorded yet. Admin can add payment recording later.</p>
+          </div>
+
+          {user.role === 'admin' && (
+            <div style={{ background: 'var(--light-gray)', padding: '18px 20px', borderRadius: 'var(--radius)', marginBottom: 24, border: '1px solid var(--border)' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 12 }}>+ Record Investor Stage Payment</div>
+              <form className="payment-form" onSubmit={submitPayment}>
+                <input name="investorName" value={payment.investorName} onChange={updatePayment} placeholder="Investor name" required />
+                <select name="stageName" value={payment.stageName} onChange={updatePayment} required>
+                  <option value="">Select stage</option>
+                  {stages.map(stage => <option key={stage.name}>{stage.name}</option>)}
+                </select>
+                <input name="amount" type="number" value={payment.amount} onChange={updatePayment} placeholder="Amount (BDT)" required />
+                <input name="note" value={payment.note} onChange={updatePayment} placeholder="Note / Reference" />
+                <button className="btn btn-primary">Record Payment</button>
+                {message && <p className="form-status" style={{ gridColumn: '1 / -1', margin: 0 }}>{message}</p>}
+              </form>
+            </div>
           )}
+
+          {(() => {
+            const filtered = allProjectPayments.filter(p => {
+              if (txFilter === 'Flat Payments') return p.type === 'Flat Payment'
+              if (txFilter === 'Investor Payments') return p.type !== 'Flat Payment'
+              return true
+            })
+
+            if (filtered.length === 0) {
+              return <p className="text-muted" style={{ textAlign: 'center', padding: '24px 0' }}>No payments recorded under this filter.</p>
+            }
+
+            return (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="payment-table" style={{ width: '100%', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Payer / Customer</th>
+                      <th>Target / Unit</th>
+                      <th>Milestone</th>
+                      <th>Method</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((item, index) => {
+                      const isFlat = item.type === 'Flat Payment'
+                      const isVerified = item.status === 'Verified' || (item.verifiedByAdmin && item.status !== 'Rejected')
+                      const isRejected = item.status === 'Rejected'
+
+                      return (
+                        <tr key={item._id || index}>
+                          <td>
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              padding: '3px 8px',
+                              borderRadius: 12,
+                              background: isFlat ? '#E0F2FE' : '#FEF3C7',
+                              color: isFlat ? '#0369A1' : '#92400E'
+                            }}>
+                              {isFlat ? '🏠 Flat' : '🤝 Investor'}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{item.partyName}</td>
+                          <td>
+                            <strong>{item.targetLabel || (item.flatNumber ? `Flat ${item.flatNumber}` : item.stageName)}</strong>
+                          </td>
+                          <td style={{ color: 'var(--medium-gray)' }}>{item.milestone || '—'}</td>
+                          <td>{item.paymentMethod || 'Bank Transfer'}</td>
+                          <td style={{ whiteSpace: 'nowrap', color: 'var(--medium-gray)', fontSize: '0.84rem' }}>
+                            {new Date(item.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td>
+                            {isVerified ? (
+                              <span style={{ fontSize: '0.74rem', color: 'var(--green)', background: 'var(--green-light)', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                ✓ Verified
+                              </span>
+                            ) : isRejected ? (
+                              <span style={{ fontSize: '0.74rem', color: '#991B1B', background: '#FEE2E2', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                ✕ Rejected
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '0.74rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>
+                                ⏳ Pending
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--green)' }}>
+                            BDT {(item.amount || 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
         </div>
       </div>
     </div>

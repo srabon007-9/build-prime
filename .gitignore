@@ -13,6 +13,7 @@ server/node_modules
 dist
 client/dist
 
-# OS
+# OS and IDE
 .DS_Store
 Thumbs.db
+*.code-workspace

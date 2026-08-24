@@ -88,10 +88,19 @@ exports.getProjectById = async (req, res) => {
   }
 };
 
+function recalculateTotalCollected(project) {
+  const txSum = (project.transactions || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+  const cpSum = (project.customerPayments || [])
+    .filter(p => p.verifiedByAdmin === true && p.status !== 'Rejected')
+    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  project.totalCollected = txSum + cpSum;
+  return project.totalCollected;
+}
+
 exports.getStatsOverview = async (req, res) => {
   try {
     const [projects, statusCounts, userCount, leadCount, estimateCount] = await Promise.all([
-      Project.find().select('name status budgetBDT estimatedPrice totalCollected progressPercentage transactions createdAt').sort({ createdAt: -1 }),
+      Project.find().select('name status budgetBDT estimatedPrice totalCollected progressPercentage transactions customerPayments createdAt').sort({ createdAt: -1 }),
       Project.aggregate([
         { $group: { _id: '$status', count: { $sum: 1 } } }
       ]),
@@ -99,6 +108,11 @@ exports.getStatsOverview = async (req, res) => {
       Consultation.countDocuments(),
       Estimation.countDocuments()
     ]);
+
+    // Recalculate totals ensuring all verified payments are counted
+    projects.forEach(project => {
+      recalculateTotalCollected(project);
+    });
 
     const totals = projects.reduce((acc, project) => {
       acc.totalBudget += project.budgetBDT || project.estimatedPrice || 0;
@@ -116,26 +130,64 @@ exports.getStatsOverview = async (req, res) => {
       progressPercentage: project.progressPercentage || 0
     }));
 
-    const recentTransactions = projects
-      .flatMap(project => (project.transactions || []).map(transaction => ({
-        projectName: project.name,
-        investorName: transaction.investorName,
-        stageName: transaction.stageName,
-        amount: transaction.amount,
-        date: transaction.date
-      })))
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
-      .slice(0, 10);
+    // Comprehensive list of all payments (customer flat payments + investor transactions)
+    const allTransactions = [];
 
-    const monthlyCollections = [];
-    const collectionByMonth = {};
     projects.forEach(project => {
+      // 1. Investor transactions
       (project.transactions || []).forEach(transaction => {
-        const date = new Date(transaction.date);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        collectionByMonth[key] = (collectionByMonth[key] || 0) + (transaction.amount || 0);
+        allTransactions.push({
+          type: 'Investor Payment',
+          projectId: project._id,
+          projectName: project.name,
+          partyName: transaction.investorName,
+          targetLabel: transaction.stageName,
+          milestone: transaction.stageName,
+          amount: transaction.amount || 0,
+          date: transaction.date,
+          paymentMethod: 'Bank Transfer',
+          status: 'Verified',
+          note: transaction.note || ''
+        });
+      });
+
+      // 2. Customer flat payments
+      (project.customerPayments || []).forEach(cp => {
+        allTransactions.push({
+          type: 'Flat Payment',
+          projectId: project._id,
+          projectName: project.name,
+          partyName: cp.customerName,
+          flatNumber: cp.flatNumber,
+          targetLabel: `Flat ${cp.flatNumber}`,
+          milestone: cp.milestone,
+          amount: cp.amount || 0,
+          date: cp.paymentDate,
+          paymentMethod: cp.paymentMethod || 'Offline',
+          status: cp.status || (cp.verifiedByAdmin ? 'Verified' : 'Pending'),
+          verifiedByAdmin: cp.verifiedByAdmin,
+          note: cp.note || ''
+        });
       });
     });
+
+    // Sort all transactions newest first
+    allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const recentTransactions = allTransactions.slice(0, 25);
+
+    // Monthly collections (verified only)
+    const collectionByMonth = {};
+    allTransactions
+      .filter(item => item.status === 'Verified')
+      .forEach(item => {
+        const date = new Date(item.date);
+        if (!isNaN(date.getTime())) {
+          const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          collectionByMonth[key] = (collectionByMonth[key] || 0) + (item.amount || 0);
+        }
+      });
+
+    const monthlyCollections = [];
     Object.keys(collectionByMonth).sort().forEach(key => {
       monthlyCollections.push({ month: key, amount: collectionByMonth[key] });
     });
@@ -402,6 +454,7 @@ exports.bookUnit = async (req, res) => {
       status: 'Verified'
     });
 
+    recalculateTotalCollected(project);
     await project.save();
     res.json(project);
   } catch (err) {
@@ -453,6 +506,7 @@ exports.recordFlatPayment = async (req, res) => {
       status: 'Verified'
     });
 
+    recalculateTotalCollected(project);
     await project.save();
     res.json(project);
   } catch (err) {
@@ -479,6 +533,7 @@ exports.verifyFlatPayment = async (req, res) => {
       payment.verifiedByAdmin = true;
     }
 
+    recalculateTotalCollected(project);
     await project.save();
     res.json(project);
   } catch (err) {
